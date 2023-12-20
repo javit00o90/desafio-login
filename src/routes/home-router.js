@@ -1,16 +1,9 @@
 import express from 'express';
 const router = express.Router();
 import ProductManager from '../dao/models/products.model.js';
+import auth from '../utils/authMiddleware.js'
 
 const productManager = new ProductManager();
-
-const auth = (req, res, next) => {
-    if (!req.session.user) {
-        res.redirect('/login')
-    } else {
-        next();
-    }
-}
 
 router.get('/', async (req, res) => {
     try {

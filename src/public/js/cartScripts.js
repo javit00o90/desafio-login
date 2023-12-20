@@ -1,31 +1,5 @@
 document.addEventListener('DOMContentLoaded', async function () {
-    let cartId = localStorage.getItem('cartId');
-
-    if (!cartId) {
-        try {
-            const response = await fetch('/api/carts', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            });
-
-            const result = await response.json();
-
-            if (response.ok) {
-                cartId = result.cartId;
-                localStorage.setItem('cartId', cartId);
-            } else {
-                console.error('Error al crear el carrito:', result.error);
-                alert('Error al crear el carrito');
-                return;
-            }
-        } catch (error) {
-            console.error('Error al crear el carrito:', error);
-            alert('Error al crear el carrito');
-            return;
-        }
-    }
+    const cartId = window.cartId;
 
     const addToCartBtns = document.querySelectorAll('.addToCartBtn');
     addToCartBtns.forEach(btn => {
@@ -71,6 +45,4 @@ document.addEventListener('DOMContentLoaded', async function () {
             alert('Error al agregar producto al carrito');
         }
     }
-
-
 });

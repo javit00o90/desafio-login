@@ -102,14 +102,48 @@ export const deleteProduct = async (req, res) => {
 
 export const addProduct = async (req, res) => {
     try {
-        const { title, description, price, code, stock, category, status } = req.body;
-        const thumbnails = req.body.thumbnails || [];
+        const productsData = Array.isArray(req.body) ? req.body : [req.body];
 
-        const requiredFields = ['title', 'description', 'price', 'code', 'stock', 'category'];
-        const missingFields = requiredFields.filter(field => !(field in req.body));
+        const validationResult = validateProducts(productsData);
+
+        if (validationResult.error) {
+            return res.status(400).json({ error: validationResult.error });
+        }
+
+        const results = await Promise.all(productsData.map(async (productData) => {
+            return await productManager.addProductRawJSON(productData);
+        }));
+
+        const responseCodes = {
+            "Ya existe un producto con ese código. No se agregó nada.": 400,
+            "Producto agregado correctamente.": 201,
+            "Error agregando producto.": 500,
+        };
+
+        const reStatus = results.some((result) => responseCodes[result] === 201) ? 201 : 500;
+
+        if (reStatus === 201) {
+            const updatedProductList = await productManager.getProducts();
+            req.app.get('io').emit('productos', updatedProductList);
+        }
+
+        return res.status(reStatus).json({ messages: results });
+
+    } catch (error) {
+        console.error(`Error en la ruta de adición de productos: ${error.message}`);
+        res.status(500).json({ error: "Error de servidor!" });
+    }
+};
+
+const validateProducts = (productsData) => {
+    const requiredFields = ['title', 'description', 'price', 'code', 'stock', 'category'];
+    const invalidFields = [];
+
+    for (const productData of productsData) {
+        const missingFields = requiredFields.filter(field => !(field in productData));
 
         if (missingFields.length > 0) {
-            return res.status(400).json({ error: `Faltan campos requeridos: ${missingFields.join(', ')}` });
+            invalidFields.push(`Faltan campos requeridos en un producto: ${missingFields.join(', ')}`);
         }
 
         const typeValidation = {
@@ -122,56 +156,27 @@ export const addProduct = async (req, res) => {
             status: 'boolean'
         };
 
-        const invalidFields = Object.entries(typeValidation).reduce((acc, [field, type]) => {
-            if (req.body[field] !== undefined) {
-                if (type === 'array' && !Array.isArray(req.body[field])) {
+        const productInvalidFields = Object.entries(typeValidation).reduce((acc, [field, type]) => {
+            if (productData[field] !== undefined) {
+                if (type === 'array' && !Array.isArray(productData[field])) {
                     acc.push(field);
-                } else if (typeof req.body[field] !== type) {
+                } else if (typeof productData[field] !== type) {
                     acc.push(field);
                 }
             }
             return acc;
         }, []);
 
-        if (!Array.isArray(thumbnails)) {
-            return res.status(400).json({ error: 'Formato inválido para el campo thumbnails' });
+        if (!Array.isArray(productData.thumbnails)) {
+            invalidFields.push('Formato inválido para el campo thumbnails en un producto');
         }
 
-        if (invalidFields.length > 0) {
-            return res.status(400).json({ error: `Tipos de datos inválidos en los campos: ${invalidFields.join(', ')}` });
+        if (productInvalidFields.length > 0) {
+            invalidFields.push(`Tipos de datos inválidos en los campos de un producto: ${productInvalidFields.join(', ')}`);
         }
-
-        const productData = {
-            title,
-            description,
-            price,
-            thumbnails,
-            code,
-            stock,
-            category,
-            status: status !== undefined ? status : true
-        };
-
-        const result = await productManager.addProductRawJSON(productData);
-
-        const responseCodes = {
-            "Ya existe un producto con ese código. No se agregó nada.": 400,
-            "Producto agregado correctamente.": 201,
-            "Error agregando producto.": 500,
-        };
-
-        const reStatus = responseCodes[result] || 500;
-
-        if (reStatus === 201) {
-            const updatedProductList = await productManager.getProducts();
-            req.app.get('io').emit('productos', updatedProductList);
-        }
-
-        return res.status(reStatus).json({ message: result });
-
-    } catch (error) {
-        return res.status(500).json({ error: "Error de servidor!" });
     }
+
+    return { error: invalidFields.join('\n') };
 };
 
 export const updateProduct = async (req, res) => {

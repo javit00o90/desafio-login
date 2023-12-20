@@ -12,7 +12,8 @@ const usersSchema = new mongoose.Schema(
         role: {
             type: String,
             default: "user",
-        }
+        },
+        cartId: String
     },
     {
         timestamps: {

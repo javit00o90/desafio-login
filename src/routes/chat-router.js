@@ -1,16 +1,9 @@
 import express from 'express';
 const router = express.Router();
+import auth from '../utils/authMiddleware.js'
 
 
-const auth = (req, res, next) => {
-    if (!req.session.user) {
-        res.redirect('/login')
-    } else {
-        next();
-    }
-}
-
-router.get('/',auth, async (req, res) => {
+router.get('/', auth, async (req, res) => {
     res.render('chat', { session: req.session});
 });
 

@@ -1,12 +1,14 @@
 import express from 'express';
 const router = express.Router();
 import CartsManager from '../dao/models/carts.model.js';
+import auth from '../utils/authMiddleware.js'
 
 import mongoose from 'mongoose';
 const Cart = mongoose.model('carts');
 const cartsManager = new CartsManager(Cart);
 
-router.get('/:cid', async (req, res) => {
+
+router.get('/:cid', auth, async (req, res) => {
     try {
         const cartId = req.params.cid;
         const cart = await cartsManager.getCartById(cartId);
