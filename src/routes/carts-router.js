@@ -93,7 +93,7 @@ router.put('/:cid', async (req, res) => {
     }
 });
 
-// PUT api/carts/:cid/products/:pid
+
 router.put('/:cid/products/:pid', async (req, res) => {
     try {
         const cartId = req.params.cid;
