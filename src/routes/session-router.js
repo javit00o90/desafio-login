@@ -61,10 +61,18 @@ router.post('/register', async (req, res) => {
         return res.redirect('/register?error=All fields are required');
     }
 
+    if (parseInt(age) < 1) {
+        return res.redirect('/register?error=Invalid age. Age must be 1 or greater');
+    }
+
+    if (email === 'adminCoder@coder.com') {
+        return res.redirect('/register?error=Cannot register with admin email');
+    }
+
     let exist = await usersModel.findOne({ email });
 
     if (exist) {
-        return res.redirect(`/register?error=User with ${email} already exist`);
+        return res.redirect(`/register?error=User with ${email} already exists`);
     }
 
     password = crypto.createHmac("sha256", "javicoder9090").update(password).digest("hex");

@@ -5,7 +5,7 @@ import auth from '../utils/authMiddleware.js'
 
 const productManager = new ProductManager();
 
-router.get('/', async (req, res) => {
+router.get('/', auth, async (req, res) => {
     try {
         const products = await productManager.getProducts();
         res.render('home', { session: req.session , products});
